@@ -46,7 +46,7 @@ public class BlackJack
         {
             Loser = dealer.Name;
         }
-        else if (dealer.SumScore() >  player.SumScore())
+        else if (dealer.SumScore() >  player.SumScore() && Loser == string.Empty)
         {
             Loser = player.Name;
         }
