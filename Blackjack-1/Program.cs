@@ -2,6 +2,13 @@
 using System.Collections.Generic;
 
 
+const string k_Player = "플레이어";
+const string k_Dealer = "딜러";
+
+const char k_P_Winner = 'P';
+const char k_D_Winner = 'D';
+const char k_NobodyWin = 'N';
+
 
 Random random = new Random();
 
@@ -15,7 +22,11 @@ Card[] dealerHands = new Card[21];
 
 int playerChip = 1000;
 
-char winner = 'N';
+char winner = k_NobodyWin;
+
+
+MakeDeck();
+
 
 Console.WriteLine("=== 블랙잭 게임 ===");
 
@@ -40,6 +51,8 @@ while (true)
         continue;
     }
 
+
+
     Console.WriteLine();
 
     if (nextCard == -1)
@@ -47,10 +60,12 @@ while (true)
         SuffleDeck();
     }
 
-    GetCard(ref dealerHands);
-    GetCard(ref dealerHands);
-    GetCard(ref playerHands);
-    GetCard(ref playerHands);
+
+
+    DrawCard(dealerHands);
+    DrawCard(dealerHands);
+    DrawCard(playerHands);
+    DrawCard(playerHands);
 
     Console.Write("딜러의 패: [??]");
     PrintCards(dealerHands, 1);
@@ -66,9 +81,12 @@ while (true)
 
 
 
+
     PlayerBlackJack();
 
-    if (winner == 'N') DealerBlackJack();
+    if (winner == k_NobodyWin) DealerBlackJack();
+
+
 
 
     Console.WriteLine("\n=== 게임 결과 ===");
@@ -76,22 +94,22 @@ while (true)
     Console.WriteLine($"딜러: {SumScore(dealerHands)}점");
 
 
-    if (SumScore(playerHands) > SumScore(dealerHands) && winner == 'N')
+    if (SumScore(playerHands) > SumScore(dealerHands) && winner == k_NobodyWin)
     {
-        winner = 'P';
+        winner = k_P_Winner;
     }
-    else if (SumScore(dealerHands) > SumScore(playerHands) && winner == 'N')
+    else if (SumScore(dealerHands) > SumScore(playerHands) && winner == k_NobodyWin)
     {
-        winner = 'D';
+        winner = k_D_Winner;
     }
 
 
-    if (winner == 'P')
+    if (winner == k_P_Winner)
     {
         Console.WriteLine($"\n플레이어 승리! (+{betChip})");
         playerChip += betChip;
     }
-    else if (winner == 'D')
+    else if (winner == k_D_Winner)
     {
         Console.WriteLine($"\n딜러 승리! (-{betChip}개)");
         playerChip -= betChip;
@@ -126,7 +144,7 @@ while (true)
     {
         Console.Clear();
         Console.WriteLine("=== 새 게임 시작 ===\n");
-        winner = 'N';
+        winner = k_NobodyWin;
         playerHands = new Card[21];
         dealerHands = new Card[21];
         betChip = 0;
@@ -143,7 +161,7 @@ while (true)
 
 void PlayerBlackJack()
 {
-    while (true)
+    while (winner == k_NobodyWin)
     {
         Console.Write("H(Hit)또는 S(Stand)를 선택하세요: ");
 
@@ -160,17 +178,7 @@ void PlayerBlackJack()
 
         if (playerInput.Equals("H"))
         {
-            Console.WriteLine("플레이어가 카드를 받았습니다\n");
-            GetCard(ref playerHands);
-            PrintCards(playerHands, 0);
-            Console.WriteLine($"플레이어의 점수: {SumScore(playerHands)}");
-
-            if (SumScore(playerHands) > 21)
-            {
-                Console.WriteLine("버스트! 21을 초과했습니다\n");
-                winner = 'D';
-                break;
-            }
+            HitCard(playerHands, k_Player, k_P_Winner);
         }
         else if (playerInput.Equals("S"))
         {
@@ -188,53 +196,80 @@ void PlayerBlackJack()
 
 void DealerBlackJack()
 {
-    Console.Write("딜러의 숨겨진 카드:");
+    Console.Write("\n딜러의 숨겨진 카드:");
     PrintCards(dealerHands, 0);
+    Console.WriteLine('\n');
+
+    while (SumScore(dealerHands) < 17 && winner == k_NobodyWin)
+    {
+        HitCard(dealerHands, k_Dealer, k_D_Winner);
+    }
+}
+
+
+void HitCard(Card[] deck, string user, char win)
+{
+    DrawCard(deck);
+
+    int lastIdx = 0;
+
+    for (int i = 0; deck[i] != null; i++)
+    {
+        lastIdx++;
+    }
+
+    Console.Write($"\n{user}가 카드를 받았습니다");
+    PrintCards(deck, --lastIdx);
     Console.WriteLine();
 
-    while (SumScore(dealerHands) < 17)
+    Console.WriteLine($"{user}의 패");
+    PrintCards(deck, 0);
+    Console.WriteLine();
+    Console.WriteLine($"{user}의 점수: {SumScore(deck)}");
+
+    if (SumScore(deck) > 21)
     {
-        Console.WriteLine("딜러가 카드를 받습니다");
-        GetCard(ref dealerHands);
-        PrintCards(dealerHands, 0);
+        Console.WriteLine("\n버스트! 21을 초과했습니다\n");
 
-        Console.WriteLine($"딜러 점수: {SumScore(dealerHands)}");
-
-        Console.WriteLine();
-
-        if (SumScore(dealerHands) > 21)
-        {
-            winner = 'P';
-            Console.WriteLine("버스트! 21을 초과했습니다\n");
-            break;
-        }
+        winner = win == k_P_Winner ? k_D_Winner : k_P_Winner;
     }
 }
 
 
 
-void PrintCards(Card[] deck, int start)
+void PrintCards(Card[] deck, int startIdx)
 {
-    for(int i = start; i < deck.Length && deck[i] != null; i++)
+    for(int i = startIdx; i < deck.Length && deck[i] != null; i++)
     {
         string shape = string.Empty;
         string numChar = string.Empty;
 
+        Console.Write($" [");
+
         switch (deck[i].shape)
         {
             case 1:
-                shape = "♠";
+                shape = "\u2665"; // 하트
+                Console.ForegroundColor = ConsoleColor.Red;
                 break;
             case 2:
-                shape = "♥";
+                shape = "\u2660"; // 스페이드
+                Console.ForegroundColor = ConsoleColor.DarkBlue;
                 break;
             case 3:
-                shape = "♦";
+                shape = "\u25C6"; // 다이아몬드
+                Console.ForegroundColor = ConsoleColor.Yellow;
                 break;
             case 0:
-                shape = "♣";
+                shape = "\u2663"; // 클로버
+                Console.ForegroundColor = ConsoleColor.DarkGreen;
                 break;
         }
+
+        Console.Write(shape);
+
+        Console.ResetColor();
+
 
         switch (deck[i].num)
         {
@@ -256,10 +291,10 @@ void PrintCards(Card[] deck, int start)
         }
 
 
-        Console.Write($" [{shape}{numChar}]");
+        Console.Write(numChar);
+        Console.Write("]");
     }
 }
-
 
 int SumScore(Card[] deck)
 {
@@ -301,8 +336,7 @@ int SumScore(Card[] deck)
     return sum;
 }
 
-
-void GetCard(ref Card[] deck)
+void DrawCard(Card[] deck)
 {
     for (int i = 0; i < deck.Length; i++)
     {
@@ -318,9 +352,7 @@ void GetCard(ref Card[] deck)
     }
 }
 
-
-
-void SuffleDeck()
+void MakeDeck()
 {
     int count = 0;
 
@@ -332,7 +364,10 @@ void SuffleDeck()
             count++;
         }
     }
+}
 
+void SuffleDeck()
+{
     Console.WriteLine("카드를 섞는 중...\n");
 
     for (int i = 0; i < 200; i++)
@@ -344,27 +379,4 @@ void SuffleDeck()
     }
 
     nextCard = 0;
-
-    /*for (int i = 0; i < cards.Length; i++)
-    {
-        string shape = string.Empty;
-        
-        switch (cards[i].shape)
-        {
-            case 1:
-                shape = "♠";
-                break;
-            case 2:
-                shape = "♥";
-                break;
-            case 3:
-                shape = "♦";
-                break;
-            case 0:
-                shape = "♣";
-                break;
-        }
-
-        Console.Write($" [{shape}{cards[i].num + 1}]");
-    }*/
 }
