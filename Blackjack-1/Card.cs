@@ -17,7 +17,7 @@ public class Card
 
 public static class Deck
 {
-    public static int nextCard = 0;
+    private static int nextCard = 0;
 
     public static Card[] deck = new Card[52];
 
@@ -61,7 +61,7 @@ public static class Deck
     }
 
 
-  public static void SuffleDeck()
+    public static void SuffleDeck()
     {
         Console.WriteLine("카드를 섞는 중...\n");
 
